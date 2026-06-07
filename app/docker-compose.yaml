@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres_fraud_score
+    environment:
+      POSTGRES_USER: postgres_fraud_score
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: fraud_score
+    ports:
+      - "5432:5432"
+    #volumes:
+     # - postgres_data:/var/lib/postgresql
