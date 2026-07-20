@@ -1,18 +1,16 @@
-package handler
+package transaction
 
 import (
 	"encoding/json"
-	"fraud-score/internal/domain"
-	"fraud-score/internal/scoring"
 	"net/http"
 )
 
 type TransactionHandler struct {
-	Service *scoring.EngineService
+	Service *EngineService
 }
 
 func (h *TransactionHandler) Transaction(w http.ResponseWriter, r *http.Request) {
-	var transaction domain.TransactionRequest
+	var transaction TransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return

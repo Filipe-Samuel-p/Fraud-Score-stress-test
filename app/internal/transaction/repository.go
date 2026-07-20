@@ -1,8 +1,7 @@
-package repository
+package transaction
 
 import (
 	"fmt"
-	"fraud-score/internal/domain"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,7 +12,7 @@ type Repository struct {
 	DB *sqlx.DB
 }
 
-func (r *Repository) SaveTransaction(request domain.TransactionRequest) error {
+func (r *Repository) SaveTransaction(request TransactionRequest) error {
 	request.TransactionID = uuid.New()
 	request.OccurredAt = time.Now()
 

@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"fraud-score/db"
-	"fraud-score/internal/handler"
-	"fraud-score/internal/repository"
-	"fraud-score/internal/scoring"
+	"fraud-score/internal/transaction"
 	"log"
 	"net/http"
 )
@@ -19,13 +17,17 @@ func main() {
 	}
 	defer db.Close()
 
-	repo := &repository.Repository{DB: db}
-	service := &scoring.EngineService{Repo: repo}
-	h := &handler.TransactionHandler{Service: service}
+	repo := &transaction.Repository{DB: db}
+	service := &transaction.EngineService{Repo: repo}
+	h := &transaction.TransactionHandler{Service: service}
 
-	http.HandleFunc("POST /transaction", h.Transaction)
+	mux := http.NewServeMux()
 
-	http.ListenAndServe(":8080", nil)
-	fmt.Println("Servidor rodando")
+	mux.HandleFunc("POST /transaction", h.Transaction)
+
+	log.Println("Servidor rodando na porta 8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatalf("Erro ao inicializar o servidor: %v", err)
+	}
 
 }
