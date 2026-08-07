@@ -76,6 +76,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Bump image tag no deployment
         env:
@@ -95,4 +98,5 @@ jobs:
           fi
           git add "${MANIFEST_PATH}"
           git commit -m "chore(cd): deploy ${IMAGE_NAME}:${GITHUB_SHA} [skip ci]"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
