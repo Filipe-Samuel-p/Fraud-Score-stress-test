@@ -34,6 +34,6 @@ variable "github_owner" {
 variable "github_repository" {
   type        = string
   description = "Repositório no formato owner/repo autorizado a impersonar a GSA do CI"
-  default     = "https://github.com/Filipe-Samuel-p/Fraud-Score-stress-test.git"
+  default     = "Filipe-Samuel-p/Fraud-Score-stress-test"
 }
 
