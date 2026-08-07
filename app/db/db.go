@@ -3,13 +3,17 @@ package db
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 func ConnectionDB() (*sqlx.DB, error) {
-	dns := "host=localhost user=postgres_fraud_score password=1234 dbname=fraud_score port=5432 sslmode=disable"
+	dns := os.Getenv("DATABASE_URL")
+	if dns == "" {
+		dns = "host=localhost user=postgres_fraud_score password=1234 dbname=fraud_score port=5432 sslmode=disable"
+	}
 	db, err := sqlx.Connect("postgres", dns)
 	if err != nil {
 		log.Fatalln("Error on database conection. Error: ", err)
