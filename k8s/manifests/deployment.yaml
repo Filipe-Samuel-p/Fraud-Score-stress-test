@@ -18,7 +18,7 @@ spec:
       serviceAccountName: fraud-score-sa
       containers:
         - name: fraud-score
-          image: us-central1-docker.pkg.dev/fraud-score-503823/repo1/fraud-score:latest
+          image: us-central1-docker.pkg.dev/fraud-score-503823/repo1/fraud-score:0f33b7cafa55ee5e94c58d17b8550c9366f50b12
           ports:
             - containerPort: 8080
           env:
