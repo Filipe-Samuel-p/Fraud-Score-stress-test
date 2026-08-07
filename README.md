@@ -47,45 +47,11 @@ O código-fonte da aplicação segue um layout inspirado em **Clean/Layered Arch
 
 ### Fluxo em runtime
 
-```mermaid
-flowchart LR
-    Client([Cliente / k6]) -->|POST /transaction| ING[GCE Ingress<br/>Load Balancer]
-    ING --> SVC[Service ClusterIP<br/>:80 → :8080]
-    SVC --> POD[Pods fraud-score<br/>Go / distroless]
-
-    subgraph GKE[GKE Autopilot Cluster]
-        ING
-        SVC
-        POD
-        HPA[[HPA<br/>1 → 5 réplicas<br/>CPU 70%]] -.escala.-> POD
-    end
-
-    POD -->|SQL| DB[(PostgreSQL<br/>tb_transactions<br/>tb_scoring_results)]
-
-    POD -.Workload Identity.-> GSA[GSA fraud-score-gke<br/>artifactregistry.reader]
-```
 
 ![Runtime Architecture](images/runtime.jpeg)
 
 ### Fluxo de entrega (CI/CD + GitOps)
 
-```mermaid
-flowchart LR
-    DEV[Push em main<br/>app/**] --> GHA
-
-    subgraph GHA[GitHub Actions - CI]
-        VET[go vet + go build] --> AUTH[Auth GCP via WIF<br/>OIDC keyless]
-        AUTH --> BUILD[docker build + push]
-    end
-
-    BUILD --> GAR[(Artifact Registry<br/>repo1/fraud-score)]
-    GHA --> BUMP[update-manifest job<br/>sed no deployment.yaml<br/>commit no repo]
-
-    BUMP --> REPO[(Git repo<br/>k8s/manifests)]
-    REPO -->|sync automático| ARGO[Argo CD<br/>prune + selfHeal]
-    ARGO -->|apply| GKE[(GKE Autopilot)]
-    GAR -->|pull imagem| GKE
-```
 
 ![CI/CD Pipeline](images/ci.jpeg)
 
