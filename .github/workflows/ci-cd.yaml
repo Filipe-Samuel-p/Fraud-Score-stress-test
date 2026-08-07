@@ -1,0 +1,98 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/ci-cd.yaml"
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: fraud-score-503823
+  GAR_LOCATION: us-central1
+  GAR_REPOSITORY: repo1
+  IMAGE_NAME: fraud-score
+  MANIFEST_PATH: k8s/manifests/deployment.yaml
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write 
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
+
+      - name: Go vet & build (validação)
+        working-directory: app
+        run: |
+          go vet ./...
+          go build ./...
+
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          IMAGE="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${IMAGE_NAME}"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: app
+          file: app/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ github.sha }}
+            ${{ steps.meta.outputs.image }}:latest
+
+  update-manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bump image tag no deployment
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        run: |
+          sed -i -E "s#(${GAR_REPOSITORY}/${IMAGE_NAME}):.*#\1:${IMAGE_TAG}#" "${MANIFEST_PATH}"
+          echo "Novo image no manifest:"
+          grep "image:" "${MANIFEST_PATH}"
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- "${MANIFEST_PATH}"; then
+            echo "Nenhuma alteração no manifest, nada a commitar."
+            exit 0
+          fi
+          git add "${MANIFEST_PATH}"
+          git commit -m "chore(cd): deploy ${IMAGE_NAME}:${GITHUB_SHA} [skip ci]"
+          git push
