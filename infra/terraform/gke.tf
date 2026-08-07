@@ -5,4 +5,6 @@ resource "google_container_cluster" "fraud_socore_cluster" {
 
   enable_autopilot    = true
   deletion_protection = false
+
+  depends_on = [google_project_service.enabled]
 }
