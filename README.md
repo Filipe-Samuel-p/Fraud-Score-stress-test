@@ -65,6 +65,8 @@ flowchart LR
     POD -.Workload Identity.-> GSA[GSA fraud-score-gke<br/>artifactregistry.reader]
 ```
 
+![Runtime Architecture](images/runtime.jpeg)
+
 ### Fluxo de entrega (CI/CD + GitOps)
 
 ```mermaid
@@ -84,6 +86,8 @@ flowchart LR
     ARGO -->|apply| GKE[(GKE Autopilot)]
     GAR -->|pull imagem| GKE
 ```
+
+![CI/CD Pipeline](images/ci.jpeg)
 
 **Pontos-chave da arquitetura:**
 
